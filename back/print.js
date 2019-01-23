@@ -61,46 +61,15 @@ const clear = (path) => {
     fs.unlink(path, () => {});
 }
 
-const main = async(ctx, next) => {
+const main = async(data,option, next) => {
     try {
-        let data = {
-            ZJUid: ctx.state.token.ZJUid,
-            password: ctx.state.token.password_lib,
-            path: ctx.request.body.files['file'].path
-        };
-        //console.log(ctx.request.body.files['file'].path);
-        let option = {
-            paperid: ctx.request.body.fields.paperid,
-            color: ctx.request.body.fields.color,
-            double: ctx.request.body.fields.double,
-            copies: ctx.request.body.fields.copies
-        };
-        // console.log(data);
         let session = await get_session();
         await login(session, data);
         await upload(session, data, option);
-        //console.log(233);
-        ctx.response.body = {
-            status: 'success'
-        };
-        ctx.response.type = 'application/json';
-        clear(ctx.request.body.files['file'].path);
     } catch (error) {
-        ctx.response.body = {
-            status: 'fail'
-        };
-        ctx.response.type = 'application/json'
-        clear(ctx.request.body.files['file'].path);
+        console.log('fail');
     }
 }
 
-module.exports = [
-    {
-        method: 'post',
-        path: '/print',
-        controller: main,
-        auth: true
-    }
-]
+module.exports.sendPrint = main;
 
-// module.exports = {     {     method: 'post',     },     'POST /print': main }
