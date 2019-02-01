@@ -17,11 +17,12 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^4.0.1"
+    "electron": "^4.0.3"
   },
   "dependencies": {
     "fs": "0.0.1-security",
     "jquery": "^3.3.1",
+    "path": "^0.12.7",
     "unirest": "^0.5.1"
   }
 }
