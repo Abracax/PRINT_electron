@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "fs": "0.0.1-security",
-    "jquery": "^3.3.1"
+    "jquery": "^3.3.1",
+    "unirest": "^0.5.1"
   }
 }

@@ -12,7 +12,7 @@ function createWindow () {
   // and load the index.html of the app.
   mainWindow.loadFile('./front/index.html')
 
-  // Open the DevTools.
+  // Open the DevTools.k
   // mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.

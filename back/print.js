@@ -1,8 +1,21 @@
-const unirest = require("unirest");
 const cheerio = require("cheerio");
+const unirest = require("unirest");
 const fs = require("fs");
-const config = require('../config');
+const path = require("path");
 
+const get_data = () => {
+    return new Promise((resolve, reject) => {
+        fs.readFile('./data.json', 'utf8', function readFileCallback(err, dta){
+            if (err){
+                console.log(err);
+            } else {
+                console.log('read file');
+                let data = JSON.parse(dta);
+                console.log(data.login_data.ZJUid);
+                resolve(data);
+        }});
+    })
+}
 const get_session = () => {
     return new Promise((resolve, reject) => {
         let req = unirest("POST", "http://print.intl.zju.edu.cn/Service.asmx");
@@ -27,49 +40,66 @@ const get_session = () => {
 
 const login = (session, data) => {
     return new Promise((resolve, reject) => {
-        let req = unirest("POST", "http://print.intl.zju.edu.cn/Service.asmx");
-        req.headers({"Postman-Token": "56b27564-5e75-61c3-3dea-4cfcd0072d87", "Cache-Control": "no-cache", "Content-Type": "text/xml"});
-        req.send(`<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" ><soap:Body><Login xmlns=\"http://tempuri.org/\"><bstrSessionID>${session}</bstrSessionID><bstrUserName>${data.ZJUid}</bstrUserName><bstrPassword>${data.password}</bstrPassword></Login></soap:Body></soap:Envelope>`);
-        req.end((res) => {
+        var req = unirest("POST", "http://print.intl.zju.edu.cn/Service.asmx");
+
+        req.headers({
+            "Postman-Token": "e522271c-f8fa-460d-a7fe-3d39a1e2361c",
+            "cache-control": "no-cache",
+            "Content-Type": "text/xml"
+        });
+        
+        req.send(`<?xml version=\"1.0\"?>\n<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\">\n\t<soap:Header>\n  </soap:Header>\n    <soap:Body>\n        <Login xmlns=\"http://tempuri.org/\">\n            <bstrSessionID>${session}</bstrSessionID>\n            <bstrUserName>${data.login_data.ZJUid}</bstrUserName>\n            <bstrPassword>${data.login_data.password}</bstrPassword>\n        </Login>\n    </soap:Body>\n</soap:Envelope>`);
+        
+        req.end(function (res) {
             if (res.error) {
+                console.log('logged in');
                 reject(res.error);
-            }
-            // console.log(res.body);
+                throw new Error(res.error); 
+            }   
             resolve();
         });
-    })
+    });
 }
+
 
 const upload = (session, data, option) => {
     return new Promise((resolve, reject) => {
-        unirest
-            .post(`http://print.intl.zju.edu.cn/upload.aspx?sid=${session}`)
-            .headers({'Content-Type': 'multipart/form-data'})
-            .field(option) // Form field
-            .attach('file', data.path) // Attachment
-            .end(function (response) {
-                if (response.error) {
-                    reject(response.error);
-                }
-                //console.log(response.body);
-                resolve();
-            });
+        req = unirest.post(`http://print.intl.zju.edu.cn/upload.aspx?sid=${session}`);
+        req.headers({
+            "Postman-Token": "32728afe-16ae-4bdf-a168-ed2cd89a2e16",
+            "cache-control": "no-cache",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"
+        });
+        for (let key in option) {
+            req.field(key, option[key])
+        }
+        req.attach('file',data.path);
+        req.end(function (response) {
+            if (response.error) {
+                console.log('fail upload');
+                reject();
+                throw new Error(response.error);
+            }
+            //console.log(response.body);
+        })
+        resolve();
     })
 }
 
-const clear = (path) => {
-    fs.unlink(path, () => {});
-}
-
-const main = async(data,option, next) => {
+const main = async(data,next) => {
     try {
+        let data = await get_data();
         let session = await get_session();
         await login(session, data);
-        await upload(session, data, option);
+        await upload(session, data.login_data, data.print_option);
+        console.log(233);
     } catch (error) {
-        console.log('fail');
+        console.log('fail main');
+        throw error;
     }
 }
 
-module.exports.sendPrint = main;
+main();
+
 
