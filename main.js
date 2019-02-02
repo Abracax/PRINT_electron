@@ -45,6 +45,10 @@ app.on('activate', function () {
     createWindow()
   }
 })
+var ipc = require('electron').ipcMain;
 
+ipc.on('errorInWindow', function(event, data){
+    console.log(data)
+});
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

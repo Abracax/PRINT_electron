@@ -7,52 +7,103 @@ let holder=document.getElementById("holder")
 let nodeConsole = require('console');
 let myConsole = new nodeConsole.Console(process.stdout, process.stderr);
 
+var ipc = require('electron').ipcRenderer;
+window.onerror = function(error, url, line) {
+    ipc.send('errorInWindow', error);
+};
+
 myConsole.log("renderer loaded");
 
-holder.ondragenter=holder.ondragover=function(event){
+holder.ondragenter=holder.ondragover = (event) => {
     event.preventDefault();
-    holder.className("holder-ondrag");
 };
 
-holder.ondragleave=function(event){
+holder.ondragleave = (event) =>{
     event.preventDefault();
-    holder.className(" ");
-    holder.innerText="Please drag your file to print.";
 };
 
-holder.ondrop=function(event){
+holder.ondrop = (event) => {
     event.preventDefault();
-    var file=event.dataTransfer.files[0];
-    fs.readFile(file.path,"utf8",function(err,data){
-        myConsole.log(file.path);
-        holder.innerText = file.path;
-        fs.readFile('./back/data.json', 'utf8', function readFileCallback(err, data){
-            if (err){
-                console.log(err);
-            } else {
-                myConsole.log('file read');
-                obj = JSON.parse(data); 
-                obj.login_data.push({"path":`${file.path}`}); 
-                json = JSON.stringify(obj);
-                fs.writeFile('./back/data.json', json, 'utf8', function(err) {
-                    if (err) throw err;
-                });
-            }
-    });
-    });
-    message = require('./back/data.json');
-    printFunc = require('./back/print.js');
-    console.log('module read in');
-    main(message);
-    event.stopPropagation();
+    Print(event);
 }
 
-const main = async(data,next) => {
+const get_file = (event) => {
+    return new Promise((resolve, reject) => {
+        let file=event.dataTransfer.files[0].path;
+        holder.innerText = file;
+        resolve(file)
+        event.stopPropagation();
+    })
+}
+
+const add_data = (path) => {
+    return new Promise((resolve, reject) => {
+        fs.readFile('./back/data.json', 'utf8', function readFileCallback(err, data){
+            if (err){
+                reject(err);
+                console.log('err read data');
+            } else {
+                obj = JSON.parse(data); 
+                obj.login_data["path"]=path; 
+                json = JSON.stringify(obj);
+                fs.writeFile('./back/data.json', json, 'utf8', function(err) {
+                    if (err) {
+                        reject();
+                        throw err;
+                    }
+                });
+                myConsole.log('write data');
+            }
+        });
+    })
+}
+
+const get_data = () => {
+    return new Promise((resolve, reject) => {
+        fs.readFile('./back/data.json', 'utf8', function readFileCallback(err, data){
+            if (err){
+                reject(err);
+                myConsole.log('err read data');
+            } else {
+                myConsole.log('get data');
+                resolve(JSON.parse(data));
+            }
+        });
+    })
+}
+
+const send_print = (data) => {
+    return new Promise((resolve, reject) => {
+        try{
+            myConsole.log('23434t5y');
+            let readPrint = require('./back/print.js');
+            myConsole.log('23434t5y');
+            readPrint.mainPrint(data);
+            resolve();
+        }catch(error){
+            console.log('fail send print');
+            reject();
+            throw new Error(error);
+        }
+    })
+}
+
+const get_state = () => {
+    return new Promise((resolve, reject) => {
+        console.log('lv');
+        resolve();
+    })
+}
+
+const Print = async(event,next) => {
     try {
-        let session = await printFunc.get_session();
-        await printFunc.login(session, data);
-        await printFunc.upload(session, data);
+        let path = await get_file(event);
+        await add_data(path);
+        let data = await get_data();
+        await send_print(data);
+        await get_state();
     } catch (error) {
-        console.log('fail');
+        console.log('fail main print');
+        throw new Error(error);
     }
 }

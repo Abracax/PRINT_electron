@@ -1,9 +1,8 @@
 const cheerio = require("cheerio");
 const unirest = require("unirest");
 const fs = require("fs");
-const path = require("path");
 
-const get_data = () => {
+/*const get_data = () => {
     return new Promise((resolve, reject) => {
         fs.readFile('./data.json', 'utf8', function readFileCallback(err, dta){
             if (err){
@@ -11,11 +10,10 @@ const get_data = () => {
             } else {
                 console.log('read file');
                 let data = JSON.parse(dta);
-                console.log(data.login_data.ZJUid);
                 resolve(data);
         }});
     })
-}
+}*/
 const get_session = () => {
     return new Promise((resolve, reject) => {
         let req = unirest("POST", "http://print.intl.zju.edu.cn/Service.asmx");
@@ -52,10 +50,10 @@ const login = (session, data) => {
         
         req.end(function (res) {
             if (res.error) {
-                console.log('logged in');
                 reject(res.error);
                 throw new Error(res.error); 
-            }   
+            }
+            //console.log(res.body);   
             resolve();
         });
     });
@@ -64,6 +62,7 @@ const login = (session, data) => {
 
 const upload = (session, data, option) => {
     return new Promise((resolve, reject) => {
+        try {
         req = unirest.post(`http://print.intl.zju.edu.cn/upload.aspx?sid=${session}`);
         req.headers({
             "Postman-Token": "32728afe-16ae-4bdf-a168-ed2cd89a2e16",
@@ -78,28 +77,31 @@ const upload = (session, data, option) => {
         req.end(function (response) {
             if (response.error) {
                 console.log('fail upload');
-                reject();
+                reject(response.error);
                 throw new Error(response.error);
             }
             //console.log(response.body);
+            resolve();
         })
-        resolve();
+    } catch (error) {
+        console.log('fail up');
+        throw error;
+    }
     })
 }
 
 const main = async(data,next) => {
     try {
-        let data = await get_data();
         let session = await get_session();
         await login(session, data);
         await upload(session, data.login_data, data.print_option);
-        console.log(233);
+        console.log('233');
     } catch (error) {
         console.log('fail main');
         throw error;
     }
 }
 
-main();
+module.exports.mainPrint = main;
 
 

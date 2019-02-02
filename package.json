@@ -20,6 +20,7 @@
     "electron": "^4.0.3"
   },
   "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
     "fs": "0.0.1-security",
     "jquery": "^3.3.1",
     "path": "^0.12.7",
