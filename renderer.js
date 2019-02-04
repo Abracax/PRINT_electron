@@ -2,25 +2,19 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 let fs=require('fs');
-const unirest = require("unirest");
-let holder=document.getElementById("holder")
+let holder=document.getElementById("holder");
 let nodeConsole = require('console');
 let myConsole = new nodeConsole.Console(process.stdout, process.stderr);
 
 var ipc = require('electron').ipcRenderer;
-window.onerror = function(error, url, line) {
-    ipc.send('errorInWindow', error);
-};
 
-myConsole.log("renderer loaded");
 
-holder.ondragenter=holder.ondragover = (event) => {
+//myConsole.log("renderer loaded");
+
+holder.ondragenter = holder.ondragover = holder.ondragleave = (event) => {
     event.preventDefault();
 };
 
-holder.ondragleave = (event) =>{
-    event.preventDefault();
-};
 
 holder.ondrop = (event) => {
     event.preventDefault();
@@ -30,8 +24,11 @@ holder.ondrop = (event) => {
 const get_file = (event) => {
     return new Promise((resolve, reject) => {
         let file=event.dataTransfer.files[0].path;
-        holder.innerText = file;
-        resolve(file)
+        if(file){
+            holder.innerText = file;
+            resolve(file);
+        }
+        else reject();
         event.stopPropagation();
     })
 }
@@ -53,6 +50,7 @@ const add_data = (path) => {
                     }
                 });
                 myConsole.log('write data');
+                resolve();
             }
         });
     })
@@ -75,9 +73,9 @@ const get_data = () => {
 const send_print = (data) => {
     return new Promise((resolve, reject) => {
         try{
-            myConsole.log('23434t5y');
+            //myConsole.log('23434t5y');
             let readPrint = require('./back/print.js');
-            myConsole.log('23434t5y');
+            //myConsole.log('23434t5y');
             readPrint.mainPrint(data);
             resolve();
         }catch(error){
@@ -88,12 +86,6 @@ const send_print = (data) => {
     })
 }
 
-const get_state = () => {
-    return new Promise((resolve, reject) => {
-        console.log('lv');
-        resolve();
-    })
-}
 
 const Print = async(event,next) => {
     try {
@@ -101,7 +93,6 @@ const Print = async(event,next) => {
         await add_data(path);
         let data = await get_data();
         await send_print(data);
-        await get_state();
     } catch (error) {
         console.log('fail main print');
         throw new Error(error);
